@@ -22,7 +22,8 @@ const AddClient = () => {
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const BACKEND_URL = "http://10.235.82.52:5000/api/clients";
+  // const BACKEND_URL = "http://10.235.82.52:5000/api/clients";
+  const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api/clients";
 
   const handleAddClient = async () => {
     if (!name.trim() || !contactNumber.trim()) {

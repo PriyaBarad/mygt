@@ -1,70 +1,3 @@
-// import React, { useState } from "react";
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   FlatList,
-//   Alert,
-// } from "react-native";
-// import { Ionicons } from "@expo/vector-icons";
-// import { useRouter } from "expo-router";
-
-
-// const BACKEND_URL = "http://10.235.82.52:5000/api/transports";
-
-// export default function SearchTransport() {
-//   const [search, setSearch] = useState("");
-//   const [transports, setTransports] = useState<any[]>([]);
-
-//   const fetchTransports = async () => {
-//     const res = await fetch(`${BACKEND_URL}?search=${search}`);
-//     setTransports(await res.json());
-//   };
-
-//   const deleteTransport = async (id: string) => {
-//     await fetch(`${BACKEND_URL}/${id}`, { method: "DELETE" });
-//     fetchTransports();
-//   };
-
-//   return (
-//     <View style={{ flex: 1, padding: 16 }}>
-//       <Text style={{ fontSize: 22 }}>Search Transport</Text>
-
-//       <TextInput
-//         placeholder="Company name"
-//         value={search}
-//         onChangeText={setSearch}
-//         style={{ borderWidth: 1, marginVertical: 10, padding: 10 }}
-//       />
-
-//       <TouchableOpacity onPress={fetchTransports}>
-//         <Text>Search</Text>
-//       </TouchableOpacity>
-
-//       <FlatList
-//         data={transports}
-//         keyExtractor={(item) => item._id}
-//         renderItem={({ item }) => (
-//           <View style={{ padding: 12 }}>
-//             <Text>{item.companyName}</Text>
-//             <Text>{item.contactNumber}</Text>
-//             <Text>{item.vehicleNumber}</Text>
-
-//             <View style={{ flexDirection: "row" }}>
-//               <Ionicons name="create" size={20} />
-//               <Ionicons name="trash" size={20} color="red" onPress={() => deleteTransport(item._id)} />
-//             </View>
-//           </View>
-//         )}
-//       />
-//     </View>
-//   );
-// }
-
-
-
-
 import React, { useState } from "react";
 import {
   View,
@@ -79,7 +12,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-const BACKEND_URL = "http://10.235.82.52:5000/api/transports";
+// const BACKEND_URL = "http://10.235.82.52:5000/api/transports";
+const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api/transports";
 
 export default function SearchTransport() {
   const router = useRouter();

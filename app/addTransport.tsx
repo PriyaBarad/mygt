@@ -23,7 +23,9 @@ const AddTransport = () => {
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const BACKEND_URL = "http://10.235.82.52:5000/api/transports";
+  // const BACKEND_URL = "http://10.235.82.52:5000/api/transports";
+  const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api/transports";
+
 
   const handleAddTransport = async () => {
     if (!companyName.trim() || !contactNumber.trim()) {

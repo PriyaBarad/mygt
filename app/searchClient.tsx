@@ -1,86 +1,3 @@
-// import React, { useState } from "react";
-// import {
-//   View,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   FlatList,
-//   Alert,
-// } from "react-native";
-// import { Ionicons } from "@expo/vector-icons";
-// import { useRouter } from "expo-router";
-
-// const BACKEND_URL = "http://10.235.82.52:5000/api/clients";
-
-// export default function SearchClient() {
-//   const router = useRouter();
-//   const [search, setSearch] = useState("");
-//   const [clients, setClients] = useState<any[]>([]);
-
-//   const fetchClients = async () => {
-//     const res = await fetch(`${BACKEND_URL}?search=${search}`);
-//     const data = await res.json();
-//     setClients(data);
-//   };
-
-//   const deleteClient = async (id: string) => {
-//     await fetch(`${BACKEND_URL}/${id}`, { method: "DELETE" });
-//     fetchClients();
-//   };
-
-//   return (
-//     <View style={{ flex: 1, padding: 16 }}>
-//       {/* Header */}
-//       <View style={{ backgroundColor: "#1976d2", padding: 20 }}>
-//         <Text style={{ color: "#fff", fontSize: 22 }}>Search Client</Text>
-//       </View>
-
-//       {/* Search */}
-//       <TextInput
-//         placeholder="Enter client name"
-//         value={search}
-//         onChangeText={setSearch}
-//         style={{ borderWidth: 1, marginVertical: 10, padding: 10 }}
-//       />
-
-//       <TouchableOpacity onPress={fetchClients}>
-//         <Text style={{ color: "#1976d2", fontWeight: "bold" }}>Search</Text>
-//       </TouchableOpacity>
-
-//       {/* Results */}
-//       <FlatList
-//         data={clients}
-//         keyExtractor={(item) => item._id}
-//         renderItem={({ item }) => (
-//           <View style={{ padding: 12, borderBottomWidth: 1 }}>
-//             <Text>Name: {item.name}</Text>
-//             <Text>Phone: {item.contactNumber}</Text>
-//             <Text>Address: {item.address}</Text>
-
-//             <View style={{ flexDirection: "row", marginTop: 6 }}>
-//               {/* <TouchableOpacity
-//                 onPress={() =>
-//                   router.push({
-//                     pathname: "/editClient",
-//                     params: { id: item._id },
-//                   })
-//                 }
-//               >
-//                 <Ionicons name="create" size={20} color="#1976d2" />
-//               </TouchableOpacity> */}
-
-//               <TouchableOpacity onPress={() => deleteClient(item._id)}>
-//                 <Ionicons name="trash" size={20} color="red" />
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-//         )}
-//       />
-//     </View>
-//   );
-// }
-
-
 import React, { useState } from "react";
 import {
   View,
@@ -94,7 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-const BACKEND_URL = "http://10.235.82.52:5000/api/clients";
+// const BACKEND_URL = "http://10.235.82.52:5000/api/clients";
+const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api/clients";
 
 export default function SearchClient() {
   const router = useRouter();
