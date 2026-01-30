@@ -11,8 +11,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-// const BACKEND_URL = "http://10.235.82.52:5000/api/clients";
-const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api/clients";
+const BACKEND_URL = "http://10.34.28.52:5000/api/clients";
+// const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api/clients";
 
 export default function SearchClient() {
   const router = useRouter();

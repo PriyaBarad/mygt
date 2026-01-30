@@ -191,19 +191,6 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// ----------------------------
-// Fetch companyName + contactNumber
-// ----------------------------
-// router.get('/names', async (req, res) => {
-//   try {
-//     const transports = await Transport.find({}, 'companyName contactNumber')
-//       .sort({ companyName: 1 }); // alphabetical
-//     res.status(200).json(transports);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Failed to fetch transports' });
-//   }
-// });
-
 
 router.get('/', async (req, res) => {
   try {
