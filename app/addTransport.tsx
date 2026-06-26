@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const AddTransport = () => {
   const router = useRouter();
-
+ 
   const [companyName, setCompanyName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [driverName, setDriverName] = useState("");
