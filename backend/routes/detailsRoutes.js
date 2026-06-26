@@ -43,10 +43,15 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get all details
+// Get all details (optionally filtered by search term)
 router.get("/", async (req, res) => {
   try {
-    const details = await Details.find();
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      query = { receiverName: { $regex: search, $options: "i" } };
+    }
+    const details = await Details.find(query).sort({ _id: -1 });
     res.status(200).json(details);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch", error });

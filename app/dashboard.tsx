@@ -16,6 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
+import { API_BASE } from "../constants/config";
 
 type RootStackParamList = {
   Dashboard: undefined;
@@ -37,8 +38,23 @@ type GoodsItem = {
 type ClientType = { _id: string; name: string; contactNumber: string };
 type TransportType = { _id: string; companyName: string; contactNumber: string };
 
- const BACKEND_URL = " https://mygt-0l9k.onrender.com/api";
-// const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api";
+const BACKEND_URL = `${API_BASE}/api`;
+
+// Shared focused-input state component helper
+const FocusableInput = (props: any) => {
+  const [focused, setFocused] = useState(false);
+  return (
+    <TextInput
+      {...props}
+      style={[
+        props.style,
+        focused && styles.inputFocused,
+      ]}
+      onFocus={() => { setFocused(true); props.onFocus?.(); }}
+      onBlur={() => { setFocused(false); props.onBlur?.(); }}
+    />
+  );
+};
 
 const Dashboard = () => {
   const router = useRouter();
@@ -58,10 +74,17 @@ const Dashboard = () => {
   const [clientSuggestions, setClientSuggestions] = useState<ClientType[]>([]);
   const [showClientDropdown, setShowClientDropdown] = useState(false);
 
-  const [date, setDate] = useState("");
+  const getTodayDateString = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const [date, setDate] = useState(getTodayDateString());
   const [data, setData] = useState<any[]>([]);
   const [editIndex, setEditIndex] = useState<number | null>(null);
-
   const [showSettings, setShowSettings] = useState(false);
 
   // --- Add Goods ---
@@ -70,7 +93,6 @@ const Dashboard = () => {
       Alert.alert("Error", "Please enter both goods name and quantity");
       return;
     }
-
     const newGoods: GoodsItem = { goodsName: goodsName.trim(), quantity: quantity.trim() };
     setGoodsList([...goodsList, newGoods]);
     setGoodsName("");
@@ -78,8 +100,7 @@ const Dashboard = () => {
   };
 
   const handleRemoveGoods = (index: number) => {
-    const updatedGoods = goodsList.filter((_, i) => i !== index);
-    setGoodsList(updatedGoods);
+    setGoodsList(goodsList.filter((_, i) => i !== index));
   };
 
   // --- Autocomplete Client ---
@@ -88,19 +109,16 @@ const Dashboard = () => {
       setClientSuggestions([]);
       return;
     }
-
     const fetchClients = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/clients`, {
-          params: { search: receiverName }
-        });
+        const res = await axios.get(`${BACKEND_URL}/clients`, { params: { search: receiverName } });
         setClientSuggestions(res.data);
       } catch (err) {
         console.log("Client fetch error", err);
       }
     };
-
-    fetchClients();
+    const delayDebounceFn = setTimeout(fetchClients, 200);
+    return () => clearTimeout(delayDebounceFn);
   }, [receiverName]);
 
   const selectClient = (client: ClientType) => {
@@ -115,19 +133,16 @@ const Dashboard = () => {
       setTransportSuggestions([]);
       return;
     }
-
     const fetchTransports = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/transports`, {
-          params: { search: transportName }
-        });
+        const res = await axios.get(`${BACKEND_URL}/transports`, { params: { search: transportName } });
         setTransportSuggestions(res.data);
       } catch (err) {
         console.log("Transport fetch error", err);
       }
     };
-
-    fetchTransports();
+    const delayDebounceFn = setTimeout(fetchTransports, 200);
+    return () => clearTimeout(delayDebounceFn);
   }, [transportName]);
 
   const selectTransport = (transport: TransportType) => {
@@ -150,19 +165,11 @@ const Dashboard = () => {
       return;
     }
 
-    const newEntry = {
-      goods: goodsList,
-      transportName,
-      transportNumber,
-      receiverName,
-      receiverNumber,
-      date,
-    };
+    const newEntry = { goods: goodsList, transportName, transportNumber, receiverName, receiverNumber, date };
 
     try {
       const response = await axios.post(`${BACKEND_URL}/details`, newEntry);
       const result = response.data;
-
       setData([...data, result]);
 
       let goodsMessage = "";
@@ -178,7 +185,7 @@ const Dashboard = () => {
         await SMS.sendSMSAsync([receiverNumber], message);
         Alert.alert("Success", "Data saved and SMS sent successfully!");
       } else {
-        Alert.alert("Error", "SMS service is not available on this device");
+        Alert.alert("Success", "Data saved successfully! (SMS not available on this device)");
       }
 
       setGoodsName("");
@@ -188,7 +195,7 @@ const Dashboard = () => {
       setTransportNumber("");
       setReceiverName("");
       setReceiverNumber("");
-      setDate("");
+      setDate(getTodayDateString());
       setEditIndex(null);
     } catch (err) {
       console.log(err);
@@ -201,66 +208,111 @@ const Dashboard = () => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <Text style={styles.title}>Goods Dispatch Manager</Text>
+          {/* Left: Logo (tap to go Home) + Title */}
+          <View style={styles.headerLeft}>
             <TouchableOpacity
-              style={styles.settingsButton}
-              onPress={() => setShowSettings(!showSettings)}
+              style={styles.logoBadge}
+              activeOpacity={0.7}
+              onPress={() => router.replace("/")}
             >
-              <Ionicons name="settings" size={24} color="#fff" />
+              <Ionicons name="cube" size={22} color="#1e3a8a" />
+              <View style={styles.logoTruck}>
+                <Ionicons name="bus" size={10} color="#fff" />
+              </View>
             </TouchableOpacity>
-          </View>
-          <Text style={styles.subtitle}>Track and manage your shipments</Text>
-
-          {showSettings && (
-            <View style={styles.settingsDropdown}>
-              <TouchableOpacity
-                style={styles.settingsOption}
-                onPress={() => router.push("/addClient")}
-              >
-                <Ionicons name="person-add" size={18} color="#1976d2" />
-                <Text style={styles.settingsOptionText}>Add Client</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.settingsOption}
-                onPress={() => router.push("/addTransport")}
-              >
-                <Ionicons name="bus" size={18} color="#1976d2" />
-                <Text style={styles.settingsOptionText}>Add Transport</Text>
-              </TouchableOpacity>
+            <View>
+              <Text style={styles.title}>Goods Dispatch Portal</Text>
+              <Text style={styles.subtitle}>Amrut Automobiles · Solapur</Text>
             </View>
-          )}
+          </View>
+
+          {/* Right: 3-dot menu */}
+          <TouchableOpacity
+            style={styles.menuButton}
+            activeOpacity={0.7}
+            onPress={() => setShowSettings(!showSettings)}
+          >
+            <Ionicons name={showSettings ? "close" : "ellipsis-vertical"} size={20} color="#1e3a8a" />
+          </TouchableOpacity>
         </View>
 
-        {/* Form */}
+        {/* Dropdown Menu — floats below header */}
+        {showSettings && (
+          <View style={styles.settingsDropdown}>
+            <TouchableOpacity
+              style={styles.settingsOption}
+              activeOpacity={0.6}
+              onPress={() => { setShowSettings(false); router.push("/addClient"); }}
+            >
+              <View style={styles.settingsIconWrap}>
+                <Ionicons name="person-add" size={16} color="#2563eb" />
+              </View>
+              <Text style={styles.settingsOptionText}>Add Client</Text>
+              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+            </TouchableOpacity>
+            <View style={styles.dropdownDivider} />
+            <TouchableOpacity
+              style={styles.settingsOption}
+              activeOpacity={0.6}
+              onPress={() => { setShowSettings(false); router.push("/addTransport"); }}
+            >
+              <View style={styles.settingsIconWrap}>
+                <Ionicons name="bus" size={16} color="#2563eb" />
+              </View>
+              <Text style={styles.settingsOptionText}>Add Transport</Text>
+              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+            </TouchableOpacity>
+            <View style={styles.dropdownDivider} />
+            <TouchableOpacity
+              style={styles.settingsOption}
+              activeOpacity={0.6}
+              onPress={() => { setShowSettings(false); router.push("/search"); }}
+            >
+              <View style={styles.settingsIconWrap}>
+                <Ionicons name="search" size={16} color="#2563eb" />
+              </View>
+              <Text style={styles.settingsOptionText}>Search Logs</Text>
+              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Form Container */}
         <View style={styles.formContainer}>
           <Text style={styles.sectionTitle}>
-            {editIndex !== null ? "Edit Entry" : "New Dispatch Entry"}
+            {editIndex !== null ? "Edit Entry" : "Create Dispatch Entry"}
           </Text>
 
-          {/* Goods */}
-          <View style={styles.goodsSection}>
-            <Text style={styles.sectionSubtitle}>Goods Details</Text>
+          {/* Goods Section */}
+          <View style={styles.goodsCard}>
+            <View style={styles.cardSubtitleRow}>
+              <Ionicons name="cube-outline" size={15} color="#2563eb" />
+              <Text style={styles.cardSubtitle}>GOODS DETAILS</Text>
+            </View>
+
             <View style={styles.inputRow}>
-              <View style={styles.inputContainer}>
+              <View style={[styles.inputContainer, { flex: 2, marginRight: 8 }]}>
                 <Text style={styles.label}>Goods Name</Text>
-                <TextInput
-                  placeholder="Enter goods name"
+                <FocusableInput
+                  placeholder="e.g. Engine Oil"
+                  placeholderTextColor="#94a3b8"
                   style={styles.input}
                   value={goodsName}
                   onChangeText={setGoodsName}
                 />
               </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Quantity</Text>
-                <TextInput
-                  placeholder="Enter quantity"
+              <View style={[styles.inputContainer, { flex: 1 }]}>
+                <Text style={styles.label}>Qty</Text>
+                <FocusableInput
+                  placeholder="0"
+                  placeholderTextColor="#94a3b8"
                   style={styles.input}
                   value={quantity}
                   onChangeText={setQuantity}
@@ -268,40 +320,59 @@ const Dashboard = () => {
                 />
               </View>
             </View>
+
             <TouchableOpacity
               style={styles.addGoodsButton}
+              activeOpacity={0.7}
               onPress={handleAddGoods}
             >
-              <Ionicons name="add-circle" size={20} color="#1976d2" />
-              <Text style={styles.addGoodsButtonText}>Add Goods</Text>
+              <Ionicons name="add-circle" size={18} color="#2563eb" />
+              <Text style={styles.addGoodsButtonText}>Add Item</Text>
             </TouchableOpacity>
 
-            {goodsList.length > 0 &&
-              goodsList.map((item, index) => (
-                <View key={index} style={styles.goodsItemContent}>
-                  <Text>{item.goodsName} - {item.quantity}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveGoods(index)}>
-                    <Ionicons name="close-circle" size={18} color="#d32f2f" />
-                  </TouchableOpacity>
-                </View>
-              ))}
+            {goodsList.length > 0 && (
+              <View style={styles.goodsListContainer}>
+                {goodsList.map((item, index) => (
+                  <View key={index} style={styles.goodsItemRow}>
+                    <Ionicons name="cube" size={14} color="#2563eb" />
+                    <Text style={styles.goodsItemText}>
+                      <Text style={{ fontWeight: "700", color: "#1e293b" }}>{item.goodsName}</Text>
+                      {"  ·  "}{item.quantity}
+                    </Text>
+                    <TouchableOpacity
+                      activeOpacity={0.5}
+                      onPress={() => handleRemoveGoods(index)}
+                      style={styles.removeBtn}
+                    >
+                      <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
 
-          {/* Transport */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Transport Name</Text>
-            <TextInput
-              placeholder="Transport company"
+          {/* Transport Info */}
+          <View style={styles.sectionLabel}>
+            <Ionicons name="bus-outline" size={15} color="#2563eb" />
+            <Text style={styles.sectionLabelText}>TRANSPORT</Text>
+          </View>
+
+          <View style={[styles.inputContainer, showTransportDropdown && transportSuggestions.length > 0 && styles.inputContainerActive]}>
+            <Text style={styles.label}>Transport Company</Text>
+            <FocusableInput
+              placeholder="Search or enter company name"
+              placeholderTextColor="#94a3b8"
               style={styles.input}
               value={transportName}
-              onChangeText={(text) => {
+              onChangeText={(text: string) => {
                 setTransportName(text);
                 setShowTransportDropdown(true);
               }}
             />
             {showTransportDropdown && transportSuggestions.length > 0 && (
               <View style={styles.dropdownWrapper}>
-                <ScrollView 
+                <ScrollView
                   style={styles.dropdownScrollView}
                   nestedScrollEnabled={true}
                   keyboardShouldPersistTaps="handled"
@@ -311,8 +382,10 @@ const Dashboard = () => {
                       key={item._id}
                       onPress={() => selectTransport(item)}
                       style={styles.dropdownItem}
+                      activeOpacity={0.6}
                     >
-                      <Text>{item.companyName}</Text>
+                      <Ionicons name="business-outline" size={14} color="#2563eb" style={{ marginRight: 8 }} />
+                      <Text style={styles.dropdownItemText}>{item.companyName}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -321,9 +394,10 @@ const Dashboard = () => {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Driver Number</Text>
-            <TextInput
-              placeholder="Driver's phone"
+            <Text style={styles.label}>Driver / Contact Number</Text>
+            <FocusableInput
+              placeholder="Enter contact number"
+              placeholderTextColor="#94a3b8"
               style={styles.input}
               value={transportNumber}
               onChangeText={setTransportNumber}
@@ -331,21 +405,27 @@ const Dashboard = () => {
             />
           </View>
 
-          {/* Receiver */}
-          <View style={styles.inputContainer}>
+          {/* Receiver Info */}
+          <View style={styles.sectionLabel}>
+            <Ionicons name="person-outline" size={15} color="#2563eb" />
+            <Text style={styles.sectionLabelText}>RECEIVER</Text>
+          </View>
+
+          <View style={[styles.inputContainer, showClientDropdown && clientSuggestions.length > 0 && styles.inputContainerActive]}>
             <Text style={styles.label}>Receiver Name</Text>
-            <TextInput
-              placeholder="Receiver's name"
+            <FocusableInput
+              placeholder="Search or enter receiver name"
+              placeholderTextColor="#94a3b8"
               style={styles.input}
               value={receiverName}
-              onChangeText={(text) => {
+              onChangeText={(text: string) => {
                 setReceiverName(text);
                 setShowClientDropdown(true);
               }}
             />
             {showClientDropdown && clientSuggestions.length > 0 && (
               <View style={styles.dropdownWrapper}>
-                <ScrollView 
+                <ScrollView
                   style={styles.dropdownScrollView}
                   nestedScrollEnabled={true}
                   keyboardShouldPersistTaps="handled"
@@ -355,8 +435,10 @@ const Dashboard = () => {
                       key={item._id}
                       onPress={() => selectClient(item)}
                       style={styles.dropdownItem}
+                      activeOpacity={0.6}
                     >
-                      <Text>{item.name}</Text>
+                      <Ionicons name="person-outline" size={14} color="#2563eb" style={{ marginRight: 8 }} />
+                      <Text style={styles.dropdownItemText}>{item.name}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -365,9 +447,10 @@ const Dashboard = () => {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Receiver Number</Text>
-            <TextInput
-              placeholder="Receiver's phone"
+            <Text style={styles.label}>Receiver Contact Number</Text>
+            <FocusableInput
+              placeholder="Enter contact number"
+              placeholderTextColor="#94a3b8"
               style={styles.input}
               value={receiverNumber}
               onChangeText={setReceiverNumber}
@@ -376,30 +459,41 @@ const Dashboard = () => {
           </View>
 
           {/* Date */}
+          <View style={styles.sectionLabel}>
+            <Ionicons name="calendar-outline" size={15} color="#2563eb" />
+            <Text style={styles.sectionLabelText}>DISPATCH DATE</Text>
+          </View>
+
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Dispatch Date</Text>
-            <TextInput
+            <FocusableInput
               placeholder="YYYY-MM-DD"
+              placeholderTextColor="#94a3b8"
               style={styles.input}
               value={date}
               onChangeText={setDate}
             />
           </View>
 
-          <TouchableOpacity
-            style={[styles.button, styles.primaryButton]}
-            onPress={handleAddAndSendSMS}
-          >
-            <Ionicons name="add-circle" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Add & Send SMS</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.searchButton]}
-            onPress={() => router.push("/search")}
-          >
-            <Ionicons name="search" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Search Dispatch</Text>
-          </TouchableOpacity>
+          {/* Action Buttons */}
+          <View style={{ marginTop: 8 }}>
+            <TouchableOpacity
+              style={[styles.button, styles.primaryButton]}
+              activeOpacity={0.85}
+              onPress={handleAddAndSendSMS}
+            >
+              <Ionicons name="paper-plane" size={18} color="#fff" />
+              <Text style={styles.buttonText}>Dispatch & Send SMS</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.button, styles.secondaryButton]}
+              activeOpacity={0.85}
+              onPress={() => router.push("/search")}
+            >
+              <Ionicons name="search" size={18} color="#2563eb" />
+              <Text style={styles.secondaryButtonText}>Search Logs</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -409,62 +503,352 @@ const Dashboard = () => {
 export default Dashboard;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f0f8ff" },
-  header: { backgroundColor: "#1976d2", padding: 20, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
-  headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 5 },
-  title: { fontSize: 24, fontWeight: "bold", color: "#fff", textAlign: "center", flex: 1 },
-  subtitle: { fontSize: 14, color: "#e3f2fd", textAlign: "center" },
-  goodsSection: { marginBottom: 16 },
-  searchButton: { backgroundColor: "#388e3c" },
-  settingsButton: { padding: 8 },
-  settingsDropdown: { backgroundColor: "#fff", marginTop: 15, borderRadius: 12, padding: 8 },
-  settingsOption: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 8 },
-  settingsOptionText: { fontSize: 16, color: "#1976d2", fontWeight: "600", marginLeft: 10 },
-  formContainer: { backgroundColor: "#fff", margin: 16, padding: 20, borderRadius: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#1976d2", marginBottom: 15 },
-  sectionSubtitle: { fontSize: 16, fontWeight: "bold", color: "#1976d2", marginBottom: 12 },
-  inputRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
-  inputContainer: { marginBottom: 12, position: 'relative' },
-  label: { fontSize: 14, fontWeight: "600", color: "#1976d2", marginBottom: 6 },
-  input: { borderWidth: 1.5, borderColor: "#e3f2fd", borderRadius: 12, padding: 12, backgroundColor: "#fafafa", fontSize: 14, color: "#1565c0" },
-  addGoodsButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", padding: 12, borderWidth: 1.5, borderColor: "#1976d2", borderRadius: 12, backgroundColor: "#e3f2fd", marginBottom: 12 },
-  addGoodsButtonText: { color: "#1976d2", fontSize: 14, fontWeight: "bold", marginLeft: 6 },
-  goodsItemContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6, padding: 8, backgroundColor: "#fff", borderRadius: 8, borderWidth: 1, borderColor: "#e3f2fd" },
+  container: {
+    flex: 1,
+    backgroundColor: "#f0f4ff",
+  },
+  scrollContent: {
+    paddingBottom: 48,
+  },
+  // ── Header ──────────────────────────────────────
+  header: {
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 56 : 44,
+    paddingBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 4,
+    zIndex: 99,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  logoBadge: {
+    width: 46,
+    height: 46,
+    backgroundColor: "#eff6ff",
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  logoTruck: {
+    position: "absolute",
+    bottom: -3,
+    right: -3,
+    width: 18,
+    height: 18,
+    backgroundColor: "#2563eb",
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#fff",
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#1e293b",
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: "#94a3b8",
+    fontWeight: "500",
+    letterSpacing: 0.2,
+    marginTop: 1,
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  settingsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  settingsDropdown: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 18,
+    overflow: "hidden",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+  },
+  settingsOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  settingsIconWrap: {
+    width: 32,
+    height: 32,
+    backgroundColor: "#eff6ff",
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  settingsOptionText: {
+    fontSize: 15,
+    color: "#1e293b",
+    fontWeight: "600",
+    flex: 1,
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+    marginHorizontal: 16,
+  },
+
+  // ── Form ────────────────────────────────────────
+  formContainer: {
+    backgroundColor: "#fff",
+    margin: 16,
+    padding: 20,
+    borderRadius: 24,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#1e293b",
+    marginBottom: 20,
+    letterSpacing: -0.3,
+  },
+  sectionLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  sectionLabelText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#2563eb",
+    letterSpacing: 1.2,
+  },
+
+  // ── Goods Card ──────────────────────────────────
+  goodsCard: {
+    backgroundColor: "#f8fafc",
+    padding: 16,
+    borderRadius: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  cardSubtitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 14,
+  },
+  cardSubtitle: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#2563eb",
+    letterSpacing: 1.2,
+  },
+  inputRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  addGoodsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: "#bfdbfe",
+    borderRadius: 12,
+    backgroundColor: "#eff6ff",
+    marginTop: 8,
+  },
+  addGoodsButtonText: {
+    color: "#2563eb",
+    fontSize: 14,
+    fontWeight: "700",
+    marginLeft: 6,
+  },
+  goodsListContainer: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#e2e8f0",
+    paddingTop: 12,
+    gap: 8,
+  },
+  goodsItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    gap: 8,
+  },
+  goodsItemText: {
+    fontSize: 14,
+    color: "#475569",
+    flex: 1,
+  },
+  removeBtn: {
+    padding: 4,
+  },
+
+  // ── Inputs ──────────────────────────────────────
+  inputContainer: {
+    marginBottom: 16,
+    position: "relative",
+    zIndex: 1,
+  },
+  inputContainerActive: {
+    zIndex: 9999,
+    elevation: 20,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748b",
+    marginBottom: 6,
+    letterSpacing: 0.2,
+  },
+  input: {
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    backgroundColor: "#fff",
+    fontSize: 14,
+    color: "#1e293b",
+    // Kill Android default outline glow
+    ...(Platform.OS === "android" && { outlineWidth: 0 } as any),
+  },
+  inputFocused: {
+    borderColor: "#2563eb",
+    borderWidth: 1.5,
+    // Crisp, no blur
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+
+  // ── Dropdown ────────────────────────────────────
   dropdownWrapper: {
-    position: 'absolute',
-    top: '100%',
+    position: "absolute",
+    top: "100%",
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#e3f2fd',
-    borderRadius: 8,
-    maxHeight: 120,
+    borderColor: "#e2e8f0",
+    borderRadius: 14,
+    overflow: "hidden",
+    maxHeight: 200,
     zIndex: 1000,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    elevation: 8,
+    shadowColor: "#1e3a8a",
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 12,
+    marginTop: 4,
   },
   dropdownScrollView: {
-    maxHeight: 120,
+    flexGrow: 0,
   },
-  dropdownItem: { 
-    padding: 10, 
-    borderBottomWidth: 1, 
-    borderBottomColor: "#e3f2fd",
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+    minHeight: 48,
   },
-  button: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    padding: 12, 
-    borderRadius: 12, 
-    flex: 1, 
-    marginVertical: 8, 
-    backgroundColor: "#1976d2" 
+  dropdownItemText: {
+    fontSize: 15,
+    color: "#1e293b",
+    fontWeight: "500",
+    lineHeight: 20,
+    flex: 1,
   },
-  primaryButton: { backgroundColor: "#1976d2" },
-  buttonText: { color: "#fff", fontSize: 14, fontWeight: "bold", marginLeft: 6 },
+
+  // ── Buttons ─────────────────────────────────────
+  button: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 15,
+    borderRadius: 14,
+    marginVertical: 5,
+  },
+  primaryButton: {
+    backgroundColor: "#1e3a8a",
+    shadowColor: "#1e3a8a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  secondaryButton: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#bfdbfe",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+    marginLeft: 8,
+    letterSpacing: 0.2,
+  },
+  secondaryButtonText: {
+    color: "#2563eb",
+    fontSize: 15,
+    fontWeight: "700",
+    marginLeft: 8,
+  },
 });

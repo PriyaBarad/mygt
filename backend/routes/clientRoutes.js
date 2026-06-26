@@ -138,7 +138,7 @@ router.get('/search', async (req, res) => {
     }
 
     const clients = await Client.find({
-      name: { $regex: `^${name}$`, $options: 'i' }, // exact name, case-insensitive
+      name: { $regex: name, $options: 'i' }, // partial name, case-insensitive
     });
 
     res.status(200).json(clients);
@@ -216,7 +216,12 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const clients = await Client.find({}, 'name contactNumber')
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      query = { name: { $regex: search, $options: 'i' } };
+    }
+    const clients = await Client.find(query, 'name contactNumber')
       .sort({ name: 1 }); // alphabetical
 
     res.status(200).json(clients);

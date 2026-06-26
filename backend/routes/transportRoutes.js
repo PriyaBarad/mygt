@@ -121,7 +121,7 @@ router.get('/search', async (req, res) => {
     }
 
     const transports = await Transport.find({
-      companyName: { $regex: `^${name}$`, $options: 'i' } // exact match, case-insensitive
+      companyName: { $regex: name, $options: 'i' } // partial match, case-insensitive
     });
 
     res.status(200).json(transports);
@@ -194,7 +194,12 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const transports = await Transport.find({}, 'companyName contactNumber')
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      query = { companyName: { $regex: search, $options: 'i' } };
+    }
+    const transports = await Transport.find(query, 'companyName contactNumber')
       .sort({ companyName: 1 }); // alphabetical
 
     res.status(200).json(transports);

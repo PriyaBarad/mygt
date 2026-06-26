@@ -14,6 +14,19 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { API_BASE } from "../constants/config";
+
+const FocusableInput = (props: any) => {
+  const [focused, setFocused] = useState(false);
+  return (
+    <TextInput
+      {...props}
+      style={[props.style, focused && styles.inputFocused]}
+      onFocus={() => { setFocused(true); props.onFocus?.(); }}
+      onBlur={() => { setFocused(false); props.onBlur?.(); }}
+    />
+  );
+};
 
 const Search = () => {
   const router = useRouter();
@@ -22,8 +35,7 @@ const Search = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const BACKEND_URL = "https://mygt-019k.onrender.com/api/details";
-  // const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api/details";
+  const BACKEND_URL = `${API_BASE}/api/details`;
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -35,18 +47,13 @@ const Search = () => {
     setHasSearched(true);
 
     try {
-      // Fetch all details from backend
-      const response = await fetch(BACKEND_URL);
+      // Fetch filtered details from backend
+      const response = await fetch(`${BACKEND_URL}?search=${encodeURIComponent(searchQuery.trim())}`);
       const data = await response.json();
 
-      // Filter by receiverName (case-insensitive)
-      const filtered = data.filter((item: any) =>
-        item.receiverName.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-
-      setResults(filtered);
+      setResults(data);
       
-      if (filtered.length === 0) {
+      if (data.length === 0) {
         Alert.alert("No Results", `No entries found for "${searchQuery}"`);
       }
     } catch (error) {
@@ -80,32 +87,41 @@ const Search = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.push("/dashboard")}
+            activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-back" size={20} color="#1e3a8a" />
           </TouchableOpacity>
-          <Text style={styles.title}>Search Entries</Text>
-          <Text style={styles.subtitle}>Find dispatch records by receiver name</Text>
+
+          <View style={styles.headerCenter}>
+            <View style={styles.logoBadge}>
+              <Ionicons name="search" size={18} color="#1e3a8a" />
+            </View>
+            <View>
+              <Text style={styles.title}>Search Entries</Text>
+              <Text style={styles.subtitle}>Find dispatch records</Text>
+            </View>
+          </View>
         </View>
 
         {/* Search Section */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color="#1976d2" style={styles.searchIcon} />
-            <TextInput
+            <Ionicons name="search" size={18} color="#2563eb" style={styles.searchIcon} />
+            <FocusableInput
               placeholder="Enter receiver name..."
               style={styles.input}
               value={searchQuery}
               onChangeText={setSearchQuery}
               onSubmitEditing={handleSearch}
               returnKeyType="search"
-              placeholderTextColor="#90a4ae"
+              placeholderTextColor="#94a3b8"
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={handleClearSearch}>
-                <Ionicons name="close-circle" size={20} color="#90a4ae" />
+              <TouchableOpacity onPress={handleClearSearch} style={{ padding: 4 }}>
+                <Ionicons name="close-circle" size={18} color="#94a3b8" />
               </TouchableOpacity>
             )}
           </View>
@@ -186,15 +202,14 @@ const Search = () => {
 
                     <View style={styles.cardContent}>
                       <View style={styles.infoRow}>
-                        <View style={styles.infoItem}>
+                        <View style={[styles.infoItem, { flex: 1 }]}>
                           <Ionicons name="cube" size={16} color="#1976d2" />
                           <Text style={styles.infoLabel}>Goods:</Text>
-                          <Text style={styles.infoValue}>{item.goodsName}</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                          <Ionicons name="stats-chart" size={16} color="#1976d2" />
-                          <Text style={styles.infoLabel}>Qty:</Text>
-                          <Text style={styles.infoValue}>{item.quantity}</Text>
+                          <Text style={styles.infoValue}>
+                            {item.goods && Array.isArray(item.goods) && item.goods.length > 0
+                              ? item.goods.map((g: any) => `${g.goodsName} (${g.quantity})`).join(", ")
+                              : item.goodsName ? `${item.goodsName} (${item.quantity || "N/A"})` : "N/A"}
+                          </Text>
                         </View>
                       </View>
 
@@ -270,78 +285,104 @@ export default Search;
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: "#f0f8ff" 
+    backgroundColor: "#f0f4ff",
   },
   header: {
-    backgroundColor: "#1976d2",
-    padding: 20,
-    paddingTop: 60,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    marginBottom: 20,
-    elevation: 4,
-    shadowColor: "#000",
+    backgroundColor: "#ffffff",
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 56 : 44,
+    paddingBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+    shadowColor: "#0f172a",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 16,
+    gap: 12,
   },
   backButton: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-    zIndex: 1,
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+  },
+  logoBadge: {
+    width: 42,
+    height: 42,
+    backgroundColor: "#eff6ff",
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#1e293b",
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 1,
   },
   clientButton: {
-  backgroundColor: "#7b1fa2", // purple
-},
-
-transportButton: {
-  backgroundColor: "#00838f", // teal
-},
-
-  subtitle: {
-    fontSize: 14,
-    color: "#e3f2fd",
-    textAlign: "center",
+    backgroundColor: "#2563eb",
+    shadowColor: "#2563eb",
+  },
+  transportButton: {
+    backgroundColor: "#1e3a8a",
+    shadowColor: "#1e3a8a",
   },
   searchContainer: {
     backgroundColor: "#fff",
     marginHorizontal: 16,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: 24,
     marginBottom: 20,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 3,
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#e3f2fd",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    marginBottom: 15,
-    backgroundColor: "#fafafa",
+    borderColor: "#e2e8f0",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 2,
+    marginBottom: 14,
+    backgroundColor: "#fff",
   },
   searchIcon: {
     marginRight: 8,
   },
   input: {
     flex: 1,
-    padding: 12,
-    fontSize: 16,
-    color: "#1565c0",
+    paddingVertical: 13,
+    fontSize: 15,
+    color: "#1e293b",
+    ...(Platform.OS === "android" && { outlineWidth: 0 } as any),
+  },
+  inputFocused: {
+    borderColor: "#2563eb",
   },
   buttonRow: {
     flexDirection: "row",
@@ -352,36 +393,36 @@ transportButton: {
     alignItems: "center",
     justifyContent: "center",
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     flex: 1,
     marginHorizontal: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
   },
   searchButton: {
-    backgroundColor: "#1976d2",
+    backgroundColor: "#2563eb", // blue-600
+    shadowColor: "#2563eb",
   },
   backButtonStyle: {
-    backgroundColor: "#42a5f5",
+    backgroundColor: "#3b82f6",
   },
   buttonText: {
     color: "#fff",
-    fontSize: 14,
-    fontWeight: "bold",
+    fontSize: 13,
+    fontWeight: "700",
     marginLeft: 6,
   },
   statsContainer: {
-    backgroundColor: "#e3f2fd",
+    backgroundColor: "#eff6ff", // blue-50
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     marginTop: 10,
   },
   statsText: {
     fontSize: 14,
-    color: "#1976d2",
+    color: "#2563eb", // blue-600
     fontWeight: "600",
     textAlign: "center",
   },
@@ -391,23 +432,24 @@ transportButton: {
   },
   resultsTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#1976d2",
+    fontWeight: "800",
+    color: "#1e293b",
     marginBottom: 15,
     textAlign: "center",
+    letterSpacing: -0.3,
   },
   card: {
     backgroundColor: "#fff",
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 20,
     marginBottom: 12,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
     elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     borderLeftWidth: 4,
-    borderLeftColor: "#1976d2",
+    borderLeftColor: "#2563eb", // blue-600
   },
   cardHeader: {
     flexDirection: "row",
@@ -421,25 +463,25 @@ transportButton: {
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#1976d2",
+    fontWeight: "800",
+    color: "#1e3a8a",
     marginLeft: 6,
   },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   dispatchedBadge: {
-    backgroundColor: "#fff3e0",
+    backgroundColor: "#fef3c7", // amber-100
   },
   deliveredBadge: {
-    backgroundColor: "#e8f5e8",
+    backgroundColor: "#d1fae5", // emerald-100
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: "bold",
-    color: "#1976d2",
+    fontWeight: "700",
+    color: "#b45309", // amber-700
   },
   cardContent: {
     marginBottom: 8,
@@ -457,28 +499,28 @@ transportButton: {
   },
   infoLabel: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#1976d2",
+    fontWeight: "700",
+    color: "#475569",
     marginLeft: 4,
-    marginRight: 2,
+    marginRight: 4,
   },
   infoValue: {
     fontSize: 12,
-    color: "#424242",
+    color: "#1e293b",
     flex: 1,
   },
   transportContact: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f1f5f9",
     padding: 8,
-    borderRadius: 6,
+    borderRadius: 8,
     marginTop: 4,
   },
   transportText: {
     fontSize: 12,
-    color: "#666",
-    marginLeft: 4,
+    color: "#475569",
+    marginLeft: 6,
   },
   loadingContainer: {
     alignItems: "center",
@@ -487,31 +529,35 @@ transportButton: {
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#1976d2",
+    color: "#2563eb",
     fontWeight: "600",
   },
   emptyState: {
     alignItems: "center",
     padding: 40,
     backgroundColor: "#fff",
-    borderRadius: 16,
-    elevation: 1,
+    borderRadius: 24,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
   },
   emptyStateTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#1976d2",
+    fontWeight: "800",
+    color: "#1e293b",
     marginTop: 12,
   },
   emptyStateText: {
     fontSize: 14,
-    color: "#424242",
+    color: "#475569",
     textAlign: "center",
     marginTop: 8,
   },
   emptyStateSubtext: {
     fontSize: 12,
-    color: "#757575",
+    color: "#64748b",
     textAlign: "center",
     marginTop: 4,
   },
@@ -519,18 +565,22 @@ transportButton: {
     alignItems: "center",
     padding: 40,
     backgroundColor: "#fff",
-    borderRadius: 16,
-    elevation: 1,
+    borderRadius: 24,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
   },
   initialStateTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#1976d2",
+    fontWeight: "800",
+    color: "#1e293b",
     marginTop: 12,
   },
   initialStateText: {
     fontSize: 14,
-    color: "#424242",
+    color: "#475569",
     textAlign: "center",
     marginTop: 8,
     lineHeight: 20,

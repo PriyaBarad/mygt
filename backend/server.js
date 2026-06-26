@@ -40,7 +40,7 @@ const clientRoutes = require("./routes/clientRoutes");
 const transportRoutes = require("./routes/transportRoutes");
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ override: true });
 
 const app = express();
 

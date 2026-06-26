@@ -28,6 +28,10 @@ const detailsSchema = new mongoose.Schema({
   receiverName: String,
   receiverNumber: String,
   date: String,
+  status: {
+    type: String,
+    default: 'dispatched',
+  },
 });
 
 module.exports = mongoose.model("Details", detailsSchema, "Details");
