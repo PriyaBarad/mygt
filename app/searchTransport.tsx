@@ -12,7 +12,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-const BACKEND_URL = "http://10.34.28.52:5000/api/transports";
+
+const BACKEND_URL = "https://mygt-019k.onrender.com/api/transports";
 // const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api/transports";
 
 export default function SearchTransport() {
