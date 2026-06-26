@@ -37,7 +37,7 @@ type GoodsItem = {
 type ClientType = { _id: string; name: string; contactNumber: string };
 type TransportType = { _id: string; companyName: string; contactNumber: string };
 
-const BACKEND_URL = "http://10.34.28.52:5000/api";
+ const BACKEND_URL = " https://mygt-0l9k.onrender.com/api";
 // const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api";
 
 const Dashboard = () => {
