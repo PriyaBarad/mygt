@@ -22,7 +22,7 @@ const Search = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const BACKEND_URL = "http://10.34.28.52:5000/api/details";
+  const BACKEND_URL = "https://mygt-019k.onrender.com/api/details";
   // const BACKEND_URL = "https://goodsnotifier-production.up.railway.app/api/details";
 
   const handleSearch = async () => {
