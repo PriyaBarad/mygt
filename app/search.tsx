@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -31,31 +31,17 @@ const FocusableInput = (props: any) => {
 const Search = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [allEntries, setAllEntries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const BACKEND_URL = `${API_BASE}/api/details`;
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      Alert.alert("Error", "Please enter a receiver name to search");
-      return;
-    }
-
-    setLoading(true);
-    setHasSearched(true);
-
+  const fetchAllEntries = async () => {
     try {
-      // Fetch filtered details from backend
-      const response = await fetch(`${BACKEND_URL}?search=${encodeURIComponent(searchQuery.trim())}`);
+      setLoading(true);
+      const response = await fetch(BACKEND_URL);
       const data = await response.json();
-
-      setResults(data);
-      
-      if (data.length === 0) {
-        Alert.alert("No Results", `No entries found for "${searchQuery}"`);
-      }
+      setAllEntries(data);
     } catch (error) {
       console.log(error);
       Alert.alert("Error", "Failed to fetch data from server");
@@ -64,10 +50,17 @@ const Search = () => {
     }
   };
 
+  useEffect(() => {
+    fetchAllEntries();
+  }, []);
+
+  const handleSearch = () => {
+    // Refresh records from server
+    fetchAllEntries();
+  };
+
   const handleClearSearch = () => {
     setSearchQuery("");
-    setResults([]);
-    setHasSearched(false);
   };
 
   const formatPhoneNumber = (number: string) => {
@@ -78,6 +71,20 @@ const Search = () => {
     }
     return number;
   };
+
+  // Filter locally as user types
+  const filteredEntries = useMemo(() => {
+    if (!searchQuery.trim()) return allEntries;
+    const query = searchQuery.toLowerCase().trim();
+    return allEntries.filter((item) => {
+      const receiverMatch = item.receiverName?.toLowerCase().includes(query);
+      const transportMatch = item.transportName?.toLowerCase().includes(query);
+      const goodsMatch = item.goods && Array.isArray(item.goods)
+        ? item.goods.some((g: any) => g.goodsName?.toLowerCase().includes(query))
+        : item.goodsName?.toLowerCase().includes(query);
+      return receiverMatch || transportMatch || goodsMatch;
+    });
+  }, [searchQuery, allEntries]);
 
   return (
     <KeyboardAvoidingView 
@@ -138,33 +145,32 @@ const Search = () => {
                 <Ionicons name="search" size={20} color="#fff" />
               )}
               <Text style={styles.buttonText}>
-                {loading ? "Searching..." : "Search"}
+                {loading ? "Refreshing..." : "Search"}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-  style={[styles.button, styles.clientButton]}
-  onPress={() => router.push("/searchClient")}
->
-  <Ionicons name="people" size={20} color="#fff" />
-  <Text style={styles.buttonText}>Search Client</Text>
-</TouchableOpacity>
+              style={[styles.button, styles.clientButton]}
+              onPress={() => router.push("/searchClient")}
+            >
+              <Ionicons name="people" size={20} color="#fff" />
+              <Text style={styles.buttonText}>Search Client</Text>
+            </TouchableOpacity>
 
-<TouchableOpacity
-  style={[styles.button, styles.transportButton]}
-  onPress={() => router.push("/searchTransport")}
->
-  <Ionicons name="bus" size={20} color="#fff" />
-  <Text style={styles.buttonText}>Search Transport</Text>
-</TouchableOpacity>
-
+            <TouchableOpacity
+              style={[styles.button, styles.transportButton]}
+              onPress={() => router.push("/searchTransport")}
+            >
+              <Ionicons name="bus" size={20} color="#fff" />
+              <Text style={styles.buttonText}>Search Transport</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Search Stats */}
-          {hasSearched && (
+          {searchQuery.trim().length > 0 && (
             <View style={styles.statsContainer}>
               <Text style={styles.statsText}>
-                Found {results.length} result{results.length !== 1 ? 's' : ''} for "{searchQuery}"
+                Found {filteredEntries.length} result{filteredEntries.length !== 1 ? 's' : ''} for "{searchQuery}"
               </Text>
             </View>
           )}
@@ -175,15 +181,17 @@ const Search = () => {
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#1976d2" />
-              <Text style={styles.loadingText}>Searching records...</Text>
+              <Text style={styles.loadingText}>Loading records...</Text>
             </View>
-          ) : results.length > 0 ? (
+          ) : filteredEntries.length > 0 ? (
             <>
-              <Text style={styles.resultsTitle}>Search Results</Text>
+              <Text style={styles.resultsTitle}>
+                {searchQuery.trim() ? "Search Results" : "All Dispatch Records"}
+              </Text>
               <FlatList
-                data={results}
+                data={filteredEntries}
                 scrollEnabled={false}
-                keyExtractor={(item, index) => `${item.receiverName}-${index}`}
+                keyExtractor={(item, index) => item._id || `${item.receiverName}-${index}`}
                 renderItem={({ item }) => (
                   <View style={styles.card}>
                     <View style={styles.cardHeader}>
@@ -254,24 +262,22 @@ const Search = () => {
                 )}
               />
             </>
-          ) : hasSearched && !loading ? (
+          ) : (
             <View style={styles.emptyState}>
               <Ionicons name="search-circle" size={80} color="#90caf9" />
-              <Text style={styles.emptyStateTitle}>No Results Found</Text>
+              <Text style={styles.emptyStateTitle}>
+                {searchQuery.trim() ? "No Results Found" : "No Records Found"}
+              </Text>
               <Text style={styles.emptyStateText}>
-                No entries found for "{searchQuery}"
+                {searchQuery.trim() 
+                  ? `No entries found for "${searchQuery}"`
+                  : "There are no dispatch records in the database yet."}
               </Text>
-              <Text style={styles.emptyStateSubtext}>
-                Try searching with a different name or check the spelling
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.initialState}>
-              <Ionicons name="search" size={80} color="#e3f2fd" />
-              <Text style={styles.initialStateTitle}>Search Dispatch Records</Text>
-              <Text style={styles.initialStateText}>
-                Enter a receiver's name in the search bar above to find specific dispatch entries
-              </Text>
+              {searchQuery.trim() && (
+                <Text style={styles.emptyStateSubtext}>
+                  Try searching with a different name or check the spelling
+                </Text>
+              )}
             </View>
           )}
         </View>

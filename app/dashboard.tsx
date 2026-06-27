@@ -249,6 +249,18 @@ const Dashboard = () => {
             <TouchableOpacity
               style={styles.settingsOption}
               activeOpacity={0.6}
+              onPress={() => { setShowSettings(false); router.push("/mainDashboard"); }}
+            >
+              <View style={styles.settingsIconWrap}>
+                <Ionicons name="stats-chart" size={16} color="#2563eb" />
+              </View>
+              <Text style={styles.settingsOptionText}>Main Dashboard</Text>
+              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+            </TouchableOpacity>
+            <View style={styles.dropdownDivider} />
+            <TouchableOpacity
+              style={styles.settingsOption}
+              activeOpacity={0.6}
               onPress={() => { setShowSettings(false); router.push("/addClient"); }}
             >
               <View style={styles.settingsIconWrap}>

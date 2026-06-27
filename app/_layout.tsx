@@ -32,9 +32,32 @@
 
 
 
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
+// Prevent the splash screen from automatically hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function Layout() {
+  const [loaded, error] = useFonts({
+    ...Ionicons.font,
+    ...MaterialIcons.font,
+  });
+
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [loaded, error]);
+
+  if (!loaded && !error) {
+    return null;
+  }
+
   return (
     <Stack
       screenOptions={{

@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "goodstracker",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -43,8 +43,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4432abd2-e906-450d-a319-4a56177821ca"
+        "projectId": "056f00aa-81cf-4a1b-b636-41be417033ab"
       }
-    }
+    },
+    "owner": "rudreshmathapati"
   }
 }
