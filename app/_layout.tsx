@@ -44,8 +44,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function Layout() {
   const [loaded, error] = useFonts({
-    ...Ionicons.font,
-    ...MaterialIcons.font,
+    ionicons: require('../assets/fonts/Ionicons.ttf'),
+    material: require('../assets/fonts/MaterialIcons.ttf'),
   });
 
   useEffect(() => {

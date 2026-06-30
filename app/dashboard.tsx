@@ -165,7 +165,34 @@ const Dashboard = () => {
       return;
     }
 
-    const newEntry = { goods: goodsList, transportName, transportNumber, receiverName, receiverNumber, date };
+    let finalReceiverNumber = receiverNumber.trim();
+    let finalTransportNumber = transportNumber.trim();
+
+    // Standardize to include +91 prefix
+    if (/^\d{10}$/.test(finalReceiverNumber)) {
+      finalReceiverNumber = "+91" + finalReceiverNumber;
+    }
+    if (/^\d{10}$/.test(finalTransportNumber)) {
+      finalTransportNumber = "+91" + finalTransportNumber;
+    }
+
+    if (!/^\+91\d{10}$/.test(finalReceiverNumber)) {
+      Alert.alert("Validation Error", "Receiver contact number must be exactly 10 digits (optionally with +91)");
+      return;
+    }
+    if (!/^\+91\d{10}$/.test(finalTransportNumber)) {
+      Alert.alert("Validation Error", "Transport driver contact number must be exactly 10 digits (optionally with +91)");
+      return;
+    }
+
+    const newEntry = { 
+      goods: goodsList, 
+      transportName, 
+      transportNumber: finalTransportNumber, 
+      receiverName, 
+      receiverNumber: finalReceiverNumber, 
+      date 
+    };
 
     try {
       const response = await axios.post(`${BACKEND_URL}/details`, newEntry);
@@ -178,11 +205,11 @@ const Dashboard = () => {
         if (index < goodsList.length - 1) goodsMessage += "\n";
       });
 
-      const message = `📌 Amrut Automobiles\n\n${goodsMessage}\n\n🎯 Receiver: ${receiverName}\n📅 Date: ${date}\n🚚 Transport: ${transportName}\n📞 Contact: ${transportNumber}\n\nis Dispatched from Amrut Automobiles Solapur`;
+      const message = `📌 Amrut Automobiles\n\n${goodsMessage}\n\n🎯 Receiver: ${receiverName}\n📅 Date: ${date}\n🚚 Transport: ${transportName}\n📞 Contact: ${finalTransportNumber}\n\nis Dispatched from Amrut Automobiles Solapur`;
 
       const isAvailable = await SMS.isAvailableAsync();
       if (isAvailable) {
-        await SMS.sendSMSAsync([receiverNumber], message);
+        await SMS.sendSMSAsync([finalReceiverNumber], message);
         Alert.alert("Success", "Data saved and SMS sent successfully!");
       } else {
         Alert.alert("Success", "Data saved successfully! (SMS not available on this device)");

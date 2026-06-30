@@ -64,10 +64,14 @@ const Search = () => {
   };
 
   const formatPhoneNumber = (number: string) => {
-    // Simple phone number formatting
+    if (!number) return "";
     const cleaned = number.replace(/\D/g, '');
+    if (cleaned.length === 12 && cleaned.startsWith('91')) {
+      const mainPart = cleaned.slice(2);
+      return `+91 ${mainPart.slice(0, 5)} ${mainPart.slice(5)}`;
+    }
     if (cleaned.length === 10) {
-      return `+91 ${cleaned.slice(0,5)} ${cleaned.slice(5)}`;
+      return `+91 ${cleaned.slice(0, 5)} ${cleaned.slice(5)}`;
     }
     return number;
   };

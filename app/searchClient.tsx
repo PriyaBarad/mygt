@@ -89,22 +89,27 @@ export default function SearchClient() {
           style={styles.backButton}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={22} color="#fff" />
+          <Ionicons name="arrow-back" size={20} color="#1e3a8a" />
         </TouchableOpacity>
+
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Clients</Text>
-          {!loading && (
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{allClients.length}</Text>
-            </View>
-          )}
+          <View style={styles.logoBadge}>
+            <Ionicons name="person" size={20} color="#1e3a8a" />
+          </View>
+          <View>
+            <Text style={styles.headerTitle}>Clients</Text>
+            <Text style={styles.headerSubtitle}>
+              {!loading ? `${allClients.length} registered` : "Loading..."}
+            </Text>
+          </View>
         </View>
+
         <TouchableOpacity
           onPress={fetchAllClients}
           style={styles.refreshButton}
           activeOpacity={0.7}
         >
-          <Ionicons name="refresh" size={20} color="#fff" />
+          <Ionicons name="refresh" size={18} color="#1e3a8a" />
         </TouchableOpacity>
       </View>
 
@@ -207,56 +212,65 @@ const styles = StyleSheet.create({
   },
   // ── Header ──────────────────────────────────────
   header: {
-    backgroundColor: "#1e3a8a",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 56 : 40,
-    paddingBottom: 20,
+    paddingTop: Platform.OS === "ios" ? 56 : 44,
+    paddingBottom: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    shadowColor: "#1e3a8a",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 4,
+    gap: 12,
   },
   backButton: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },
   headerCenter: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
+    flex: 1,
+  },
+  logoBadge: {
+    width: 42,
+    height: 42,
+    backgroundColor: "#eff6ff",
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
-    color: "#fff",
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "800",
-    letterSpacing: -0.4,
+    color: "#1e293b",
+    letterSpacing: -0.3,
   },
-  countBadge: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  countBadgeText: {
-    color: "#fff",
+  headerSubtitle: {
     fontSize: 12,
-    fontWeight: "700",
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 1,
   },
   refreshButton: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: 10,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },

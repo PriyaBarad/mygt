@@ -221,7 +221,7 @@ router.get('/', async (req, res) => {
     if (search) {
       query = { name: { $regex: search, $options: 'i' } };
     }
-    const clients = await Client.find(query, 'name contactNumber')
+    const clients = await Client.find(query)
       .sort({ name: 1 }); // alphabetical
 
     res.status(200).json(clients);

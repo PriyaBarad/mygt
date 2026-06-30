@@ -90,7 +90,12 @@ export default function MainDashboard() {
   }, [filterType, selectedMonth]);
 
   const formatPhoneNumber = (num: string) => {
+    if (!num) return "";
     const cleaned = num.replace(/\D/g, "");
+    if (cleaned.length === 12 && cleaned.startsWith("91")) {
+      const mainPart = cleaned.slice(2);
+      return `+91 ${mainPart.slice(0, 5)} ${mainPart.slice(5)}`;
+    }
     if (cleaned.length === 10) {
       return `+91 ${cleaned.slice(0, 5)} ${cleaned.slice(5)}`;
     }
@@ -260,7 +265,7 @@ export default function MainDashboard() {
               <Text style={styles.recordDetailValue}>
                 {item.goods && Array.isArray(item.goods) && item.goods.length > 0
                   ? item.goods.map((g) => `${g.goodsName} (${g.quantity})`).join(", ")
-                  : "N/A"}
+                  : (item as any).goodsName ? `${(item as any).goodsName} (${(item as any).quantity || "N/A"})` : "N/A"}
               </Text>
             </View>
           </View>

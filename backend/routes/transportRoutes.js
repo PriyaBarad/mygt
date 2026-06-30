@@ -199,7 +199,7 @@ router.get('/', async (req, res) => {
     if (search) {
       query = { companyName: { $regex: search, $options: 'i' } };
     }
-    const transports = await Transport.find(query, 'companyName contactNumber')
+    const transports = await Transport.find(query)
       .sort({ companyName: 1 }); // alphabetical
 
     res.status(200).json(transports);
